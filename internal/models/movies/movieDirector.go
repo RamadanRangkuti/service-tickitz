@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type MovieDirector struct {
+type MovieDirectordsas struct {
 	Id        int        `json:"id"`
 	Name      string     `json:"name"`
 	CreatedAt time.Time  `json:"created_at"`

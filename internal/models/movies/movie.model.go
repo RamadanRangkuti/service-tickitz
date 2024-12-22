@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Movies struct {
+type Moviesasdas struct {
 	Id          int        `json:"id"`
 	Title       string     `json:"title"`
 	Synopsis    string     `json:"synopsis"`

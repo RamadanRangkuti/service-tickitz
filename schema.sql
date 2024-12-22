@@ -35,13 +35,6 @@ create table movie_directors(
 	updated_at timestamp with time zone
 );
 
-create table tes(
-	id serial unique not null primary key,
-	name varchar(255)
-);
-
-insert into tes(name)values('rama'),('rando');
-
 create table movies(
 	id serial unique not null primary key,
 	title varchar(255) unique,

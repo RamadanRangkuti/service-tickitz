@@ -17,14 +17,14 @@ func FindUserById(id int) (*models.UserDetails, error) {
 	}
 	defer conn.Close(context.Background())
 
-	query := `SELECT email, password, first_name, last_name, phone_number, image
-        FROM users
-        LEFT JOIN profiles ON profiles.user_id = users.id
-        WHERE users.id = $1`
+	query := `SELECT u.id, u.email, u.password, p.first_name, p.last_name, p.phone_number, p.image
+        FROM users u
+        LEFT JOIN profiles p ON p.user_id = u.id
+        WHERE u.id = $1`
 
 	err = conn.QueryRow(context.Background(),
 		query, id).
-		Scan(&user.Email, &user.Password, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Image)
+		Scan(&user.Id, &user.Email, &user.Password, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect rows: %v", err)
 	}

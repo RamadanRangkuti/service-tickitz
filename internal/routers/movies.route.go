@@ -7,5 +7,6 @@ import (
 )
 
 func MovieRouter(r *gin.RouterGroup) {
-	r.GET("/", handlers.GetMovie)
+	r.GET("/", handlers.GetMovies)
+	r.GET("/:id", handlers.GetMovieById)
 }

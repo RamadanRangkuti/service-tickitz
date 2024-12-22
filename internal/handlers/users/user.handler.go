@@ -52,6 +52,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	file, err := c.FormFile("image")
+
+	if err != nil {
+		response.BadRequest("Image file is required", err.Error())
+		return
+	}
+
 	if !handlers.IsValidEmail(userInput.Email) {
 		response.BadRequest("Invalid email format", nil)
 		return
@@ -68,6 +75,20 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Step 3: Simpan file gambar
+	allowedExts := []string{".jpg", ".jpeg", ".png"}
+	maxSize := int64(5 << 20) // 500 KB
+	uploadDir := "public/images"
+
+	imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
+	if err != nil {
+		response.BadRequest("Failed to upload image", err.Error())
+		return
+	}
+
+	// Step 4: Assign path file ke struct
+	userInput.Image = &imagePath
+
 	// Hash password sebelum menyimpan ke database
 	hashedPassword := pkg.GenerateHash(userInput.Password)
 	userInput.Password = hashedPassword
@@ -83,6 +104,48 @@ func CreateUser(c *gin.Context) {
 	userInput.Id = userId
 	response.Success("User and profile created successfully", userInput)
 }
+
+// func CreateUser(c *gin.Context) {
+// 	response := pkg.NewResponse(c)
+
+// 	var userInput models.UserDetails
+// 	if err := c.ShouldBind(&userInput); err != nil {
+// 		fmt.Printf("Failed to bind JSON: %v\n", err)
+// 		response.BadRequest("Invalid input data", err.Error())
+// 		return
+// 	}
+
+// 	if !handlers.IsValidEmail(userInput.Email) {
+// 		response.BadRequest("Invalid email format", nil)
+// 		return
+// 	}
+
+// 	if !handlers.IsValidPassword(userInput.Password) {
+// 		response.BadRequest("Password must be at least 8 characters long", nil)
+// 		return
+// 	}
+
+// 	userEmail, _ := repository.FindUserByEmail(userInput.Email)
+// 	if userEmail != nil {
+// 		response.BadRequest("Email already exist", nil)
+// 		return
+// 	}
+
+// 	// Hash password sebelum menyimpan ke database
+// 	hashedPassword := pkg.GenerateHash(userInput.Password)
+// 	userInput.Password = hashedPassword
+
+// 	// Panggil fungsi repository untuk menyimpan data
+// 	userId, err := repository.InsertUser(&userInput)
+// 	if err != nil {
+// 		response.InternalServerError("Failed to create user and profile", err.Error())
+// 		return
+// 	}
+
+// 	// Tambahkan ID yang baru saja dibuat ke dalam respons
+// 	userInput.Id = userId
+// 	response.Success("User and profile created successfully", userInput)
+// }
 
 func UpdateUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
