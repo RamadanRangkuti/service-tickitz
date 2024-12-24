@@ -27,6 +27,33 @@ func ValidateToken() gin.HandlerFunc {
 			response.Unauthorized("Unauthorized", nil)
 		}
 		c.Set("UserId", claims.UserId)
+		c.Set("UserRole", claims.UserRole)
+		c.Next()
+	}
+}
+
+func RoleCheck(requiredRole int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		response := pkg.NewResponse(c)
+
+		role, exists := c.Get("UserRole")
+		if !exists {
+			//forbidden
+			response.Unauthorized("Unauthorized", nil)
+			return
+		}
+
+		userRole, ok := role.(int)
+		if !ok {
+			response.InternalServerError("Failed to parse user role from token", nil)
+			return
+		}
+
+		if userRole != requiredRole {
+			response.Unauthorized("Access denied", nil)
+			return
+		}
+
 		c.Next()
 	}
 }
