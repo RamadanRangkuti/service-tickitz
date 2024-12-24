@@ -67,7 +67,8 @@ func Login(c *gin.Context) {
 		response.BadRequest("Invalid email or password", nil)
 		return
 	}
-	token, err := pkg.GenerateToken(user.Id)
+	fmt.Println(user)
+	token, err := pkg.GenerateToken(user.Id, user.RoleId)
 	if err != nil {
 		response.InternalServerError("Failed to generate token", err.Error())
 		return

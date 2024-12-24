@@ -78,12 +78,12 @@ func GetMovieById(c *gin.Context) {
 		return
 	}
 	movie, err := repository.FindMovieById(id)
-	if movie == nil {
-		response.NotFound(fmt.Sprintf("Movie with ID %d not found", id), nil)
+	if err != nil {
+		response.InternalServerError("Failed to fetch movie", err.Error())
 		return
 	}
-	if err != nil {
-		response.InternalServerError("Failed Get movie", err.Error())
+	if movie == nil {
+		response.NotFound(fmt.Sprintf("Movie with ID %d not found", id), nil)
 		return
 	}
 

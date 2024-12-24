@@ -23,12 +23,19 @@ func GetAllUser(c *gin.Context) {
 
 func GetUserById(c *gin.Context) {
 	response := pkg.NewResponse(c)
-	id, err := strconv.Atoi(c.Param("id"))
-
-	if err != nil {
-		response.BadRequest("Invalid input", err.Error())
+	// id, err := strconv.Atoi(c.Param("id"))
+	userId, exists := c.Get("UserId")
+	if !exists {
+		response.Unauthorized("Unauthorized", nil)
 		return
 	}
+	id, ok := userId.(int)
+	fmt.Println(id)
+	if !ok {
+		response.InternalServerError("Failed to parse user ID from token", nil)
+		return
+	}
+
 	user, err := repository.FindUserById(id)
 	if user == nil {
 		response.NotFound(fmt.Sprintf("User with ID %d not found", id), nil)
@@ -75,9 +82,8 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Step 3: Simpan file gambar
 	allowedExts := []string{".jpg", ".jpeg", ".png"}
-	maxSize := int64(5 << 20) // 500 KB
+	maxSize := int64(5 << 20) // 5MB
 	uploadDir := "public/images"
 
 	imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
@@ -86,23 +92,19 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Step 4: Assign path file ke struct
 	userInput.Image = &imagePath
 
-	// Hash password sebelum menyimpan ke database
 	hashedPassword := pkg.GenerateHash(userInput.Password)
 	userInput.Password = hashedPassword
 
-	// Panggil fungsi repository untuk menyimpan data
 	userId, err := repository.InsertUser(&userInput)
 	if err != nil {
-		response.InternalServerError("Failed to create user and profile", err.Error())
+		response.InternalServerError("Failed to create profile", err.Error())
 		return
 	}
 
-	// Tambahkan ID yang baru saja dibuat ke dalam respons
 	userInput.Id = userId
-	response.Success("User and profile created successfully", userInput)
+	response.Success("Success created user", userInput)
 }
 
 // func CreateUser(c *gin.Context) {
@@ -150,7 +152,6 @@ func CreateUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
-	// Parse user ID dari parameter URL
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		response.BadRequest("Invalid user ID", err.Error())
@@ -162,7 +163,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Bind data dari request body
 	var userInput models.UserDetails
 	if err := c.ShouldBind(&userInput); err != nil {
 		fmt.Printf("Failed to bind JSON: %v\n", err)
@@ -208,7 +208,6 @@ func UpdateUser(c *gin.Context) {
 		user.Image = userInput.Image
 	}
 
-	// Panggil fungsi repository untuk update data
 	err = repository.EditUser(id, user)
 	if err != nil {
 		response.InternalServerError("Failed to update user and profile", err.Error())

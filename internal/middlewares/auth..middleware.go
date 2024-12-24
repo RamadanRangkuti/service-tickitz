@@ -22,10 +22,11 @@ func ValidateToken() gin.HandlerFunc {
 			response.Unauthorized("Unauthorized", nil)
 		}
 
-		_, err := pkg.VerifyToken(token)
+		claims, err := pkg.VerifyToken(token)
 		if err != nil {
 			response.Unauthorized("Unauthorized", nil)
 		}
+		c.Set("UserId", claims.UserId)
 		c.Next()
 	}
 }

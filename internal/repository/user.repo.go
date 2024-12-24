@@ -58,8 +58,8 @@ func FindUserByEmail(email string) (*models.Auth, error) {
 	defer conn.Close(context.Background())
 
 	err = conn.QueryRow(context.Background(), `
-		SELECT id, email, password
-		FROM users WHERE email = $1`, email).Scan(&user.Id, &user.Email, &user.Password)
+		SELECT id, email, password, role_id
+		FROM users WHERE email = $1`, email).Scan(&user.Id, &user.Email, &user.Password, &user.RoleId)
 	if err != nil {
 		if err.Error() == "no rows in result set" { // Periksa jika tidak ada hasil
 			return nil, nil
