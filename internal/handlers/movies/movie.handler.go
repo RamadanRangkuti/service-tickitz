@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"RamadanRangkuti/service-tickitz/internal/models"
 	"RamadanRangkuti/service-tickitz/internal/repository"
 	"RamadanRangkuti/service-tickitz/pkg"
+	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -21,18 +24,33 @@ func GetMovies(c *gin.Context) {
 	if order != "asc" {
 		order = "desc"
 	}
+	var movies models.ListMovies
+	var count int
 
-	movies, err := repository.FindAllMovies(page, limit, order, sortBy, search)
-	if err != nil {
-		response.InternalServerError("Failed to fetch movies", err.Error())
-		return
+	get := pkg.Redis().Get(context.Background(), c.Request.RequestURI)
+	if get.Val() != "" {
+		rawData := []byte(get.Val())
+		json.Unmarshal(rawData, &movies)
+	} else {
+		movies, err := repository.FindAllMovies(page, limit, order, sortBy, search)
+		if err != nil {
+			response.InternalServerError("Failed to fetch movies", err.Error())
+			return
+		}
+		encoded, _ := json.Marshal(movies)
+		pkg.Redis().Set(context.Background(), c.Request.RequestURI, string(encoded), 0)
 	}
 
-	if len(movies) == 0 {
-		response.NotFound("No movies found", movies)
-		return
+	getCount := pkg.Redis().Get(context.Background(), fmt.Sprintf("count+%s", c.Request.RequestURI))
+
+	if getCount.Val() != "" {
+		rawData := []byte(getCount.Val())
+		json.Unmarshal(rawData, &count)
+	} else {
+		count = repository.CountMovie(search)
+		encoded, _ := json.Marshal(count)
+		pkg.Redis().Set(context.Background(), fmt.Sprintf("count+%s", c.Request.RequestURI), string(encoded), 0)
 	}
-	count := repository.CountMovie(search)
 	totalPage := int(math.Ceil(float64(count) / float64(limit)))
 
 	pageInfo := &pkg.PageInfo{
