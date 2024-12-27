@@ -9,19 +9,23 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func FindALlUser() (models.Users, error) {
+func FindALlUser(page int, limit int, order string, sortBy string, search string) (models.Users, error) {
 	conn, err := pkg.DB()
 	if err != nil {
 		fmt.Println("connection failed", err)
 	}
 	defer conn.Close(context.Background())
-	query := `
+	offset := (page - 1) * limit
+	search = fmt.Sprintf("%%%s%%", search)
+	query := fmt.Sprintf(`
 	SELECT u.id, u.email, u.password, ur.role, p.first_name, p.last_name, 
 	p.phone_number, p.image, u.created_at, u.updated_at 
 	FROM users u LEFT JOIN user_roles ur ON u.role_id = ur.id 
-	LEFT JOIN profiles p ON p.user_id = u.id ORDER BY id ASC;
-	`
-	rows, err := conn.Query(context.Background(), query)
+	LEFT JOIN profiles p ON p.user_id = u.id
+	WHERE LOWER (p.first_name) ILIKE($1)
+	 ORDER BY %s %s LIMIT $2 OFFSET $3
+	`, sortBy, order)
+	rows, err := conn.Query(context.Background(), query, search, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %v", err)
 	}
@@ -125,26 +129,6 @@ func EditUser(userId int, userDetails *models.UserDetails) error {
 			tx.Rollback(context.Background())
 		}
 	}()
-	fmt.Println("user diterima dari handler :", userDetails)
-	// Dereference nilai pointer
-	// firstName := ""
-	// if userDetails.FirstName != nil {
-	// 	firstName = *userDetails.FirstName
-	// }
-	// lastName := ""
-	// if userDetails.LastName != nil {
-	// 	lastName = *userDetails.LastName
-	// }
-	// phoneNumber := ""
-	// if userDetails.PhoneNumber != nil {
-	// 	phoneNumber = *userDetails.PhoneNumber
-	// }
-	// image := ""
-	// if userDetails.Image != nil {
-	// 	image = *userDetails.Image
-	// }
-
-	// Update tabel `users`
 	userQuery := `
 		UPDATE users
 		SET email = $1, password = $2, updated_at = current_timestamp

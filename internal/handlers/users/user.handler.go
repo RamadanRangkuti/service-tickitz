@@ -13,7 +13,15 @@ import (
 
 func GetAllUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
-	user, err := repository.FindALlUser()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "5"))
+	sortBy := c.DefaultQuery("sortBy", "id")
+	order := c.DefaultQuery("order", "asc")
+	search := c.Query("search")
+	if order != "asc" {
+		order = "desc"
+	}
+	user, err := repository.FindALlUser(page, limit, order, sortBy, search)
 	if err != nil {
 		response.InternalServerError("Failed Get All Users", err.Error())
 		return
