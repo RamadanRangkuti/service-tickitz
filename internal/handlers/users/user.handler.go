@@ -6,6 +6,7 @@ import (
 	"RamadanRangkuti/service-tickitz/internal/repository"
 	"RamadanRangkuti/service-tickitz/pkg"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,24 @@ func GetAllUser(c *gin.Context) {
 		response.InternalServerError("Failed Get All Users", err.Error())
 		return
 	}
-	response.Success("Success Get All Users", user)
+	count := repository.CountUser(search)
+	totalPage := int(math.Ceil(float64(count) / float64(limit)))
+
+	pageInfo := &pkg.PageInfo{
+		CurrentPage: page,
+		NextPage:    page + 1,
+		PrevPage:    page - 1,
+		TotalPage:   totalPage,
+		TotalData:   count,
+	}
+	if page >= totalPage {
+		pageInfo.NextPage = 0
+	}
+	if page <= 1 {
+		pageInfo.PrevPage = 0
+	}
+
+	response.GetAllSuccess("Success Get All Users", user, pageInfo)
 }
 
 func GetUserById(c *gin.Context) {

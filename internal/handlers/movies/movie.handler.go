@@ -10,23 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// func GetMovies(c *gin.Context) {
-// 	response := pkg.NewResponse(c)
-
-// 	movies, err := repository.GetMovies()
-// 	if err != nil {
-// 		response.InternalServerError("Failed to fetch movies", err.Error())
-// 		return
-// 	}
-
-// 	if len(movies) == 0 {
-// 		response.NotFound("No movies found", movies)
-// 		return
-// 	}
-
-// 	response.Success("Movies fetched successfully", movies)
-// }
-
 func GetMovies(c *gin.Context) {
 	response := pkg.NewResponse(c)
 

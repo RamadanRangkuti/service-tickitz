@@ -200,3 +200,19 @@ func RemoveUser(userId int) error {
 
 	return nil
 }
+
+func CountUser(search string) int {
+	conn, err := pkg.DB()
+	if err != nil {
+		fmt.Println("connection failed", err)
+	}
+	defer conn.Close(context.Background())
+	var total int
+	search = fmt.Sprintf("%%%s%%", search)
+
+	conn.QueryRow(context.Background(), `
+	SELECT COUNT(id) FROM users WHERE email ILIKE $1
+	`, search).Scan(&total)
+
+	return total
+}
