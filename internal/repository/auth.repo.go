@@ -28,3 +28,23 @@ func RegisterUser(user *models.Auth) (*models.Auth, error) {
 
 	return &newUser, nil
 }
+
+func FindUserByEmail(email string) (*models.Auth, error) {
+	var user models.Auth
+	conn, err := pkg.DB()
+	if err != nil {
+		fmt.Println("connection failed", err)
+	}
+	defer conn.Close(context.Background())
+
+	err = conn.QueryRow(context.Background(), `
+		SELECT id, email, password, role_id
+		FROM users WHERE email = $1`, email).Scan(&user.Id, &user.Email, &user.Password, &user.RoleId)
+	if err != nil {
+		if err.Error() == "no rows in result set" { // Periksa jika tidak ada hasil
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to query user: %w", err)
+	}
+	return &user, nil
+}

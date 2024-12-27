@@ -9,36 +9,19 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func FindUserById(id int) (*models.UserDetails, error) {
-	var user models.UserDetails
-	conn, err := pkg.DB()
-	if err != nil {
-		fmt.Println("connection failed", err)
-	}
-	defer conn.Close(context.Background())
-
-	query := `SELECT u.id, u.email, u.password, p.first_name, p.last_name, p.phone_number, p.image
-        FROM users u
-        LEFT JOIN profiles p ON p.user_id = u.id
-        WHERE u.id = $1`
-
-	err = conn.QueryRow(context.Background(),
-		query, id).
-		Scan(&user.Id, &user.Email, &user.Password, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Image)
-	if err != nil {
-		return nil, fmt.Errorf("failed to collect rows: %v", err)
-	}
-
-	return &user, nil
-}
-
 func FindALlUser() (models.Users, error) {
 	conn, err := pkg.DB()
 	if err != nil {
 		fmt.Println("connection failed", err)
 	}
 	defer conn.Close(context.Background())
-	rows, err := conn.Query(context.Background(), `SELECT * from users`)
+	query := `
+	SELECT u.id, u.email, u.password, ur.role, p.first_name, p.last_name, 
+	p.phone_number, p.image, u.created_at, u.updated_at 
+	FROM users u LEFT JOIN user_roles ur ON u.role_id = ur.id 
+	LEFT JOIN profiles p ON p.user_id = u.id ORDER BY id ASC;
+	`
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %v", err)
 	}
@@ -49,23 +32,30 @@ func FindALlUser() (models.Users, error) {
 	return user, nil
 }
 
-func FindUserByEmail(email string) (*models.Auth, error) {
-	var user models.Auth
+func FindUserById(id int) (*models.UserDetails, error) {
+	var user models.UserDetails
 	conn, err := pkg.DB()
 	if err != nil {
 		fmt.Println("connection failed", err)
 	}
 	defer conn.Close(context.Background())
 
-	err = conn.QueryRow(context.Background(), `
-		SELECT id, email, password, role_id
-		FROM users WHERE email = $1`, email).Scan(&user.Id, &user.Email, &user.Password, &user.RoleId)
+	query := `
+	SELECT u.id, u.email, u.password, ur.role, p.first_name, p.last_name, 
+	p.phone_number, p.image
+	FROM users u LEFT JOIN user_roles ur ON u.role_id = ur.id 
+	LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = $1;
+	`
+
+	err = conn.QueryRow(context.Background(),
+		query, id).
+		Scan(&user.Id, &user.Email, &user.Password, &user.Role, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Image)
 	if err != nil {
-		if err.Error() == "no rows in result set" { // Periksa jika tidak ada hasil
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to query user: %w", err)
+		return nil, fmt.Errorf("failed to collect rows: %v", err)
 	}
+
+	fmt.Println(user)
+
 	return &user, nil
 }
 
@@ -75,6 +65,7 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 		fmt.Println("connection failed", err)
 	}
 	defer conn.Close(context.Background())
+	fmt.Println("data diterima ===> : ", userDetails)
 	// Mulai transaksi
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
@@ -134,9 +125,28 @@ func EditUser(userId int, userDetails *models.UserDetails) error {
 			tx.Rollback(context.Background())
 		}
 	}()
+	fmt.Println("user diterima dari handler :", userDetails)
+	// Dereference nilai pointer
+	// firstName := ""
+	// if userDetails.FirstName != nil {
+	// 	firstName = *userDetails.FirstName
+	// }
+	// lastName := ""
+	// if userDetails.LastName != nil {
+	// 	lastName = *userDetails.LastName
+	// }
+	// phoneNumber := ""
+	// if userDetails.PhoneNumber != nil {
+	// 	phoneNumber = *userDetails.PhoneNumber
+	// }
+	// image := ""
+	// if userDetails.Image != nil {
+	// 	image = *userDetails.Image
+	// }
+
 	// Update tabel `users`
 	userQuery := `
-		UPDATE users 
+		UPDATE users
 		SET email = $1, password = $2, updated_at = current_timestamp
 		WHERE id = $3
 	`
@@ -147,12 +157,11 @@ func EditUser(userId int, userDetails *models.UserDetails) error {
 
 	// Update tabel `profiles`
 	profileQuery := `
-		UPDATE profiles 
+		UPDATE profiles
 		SET first_name = $1, last_name = $2, phone_number = $3, image = $4, updated_at = current_timestamp
 		WHERE user_id = $5
 	`
-	_, err = tx.Exec(context.Background(), profileQuery,
-		userDetails.FirstName, userDetails.LastName, userDetails.PhoneNumber, userDetails.Image, userId)
+	_, err = tx.Exec(context.Background(), profileQuery, userDetails.FirstName, userDetails.LastName, userDetails.PhoneNumber, userDetails.Image, userId)
 	if err != nil {
 		return fmt.Errorf("failed to update profiles table: %v", err)
 	}

@@ -30,13 +30,14 @@ func GetUserById(c *gin.Context) {
 		return
 	}
 	id, ok := userId.(int)
-	fmt.Println(id)
+
 	if !ok {
 		response.InternalServerError("Failed to parse user ID from token", nil)
 		return
 	}
 
 	user, err := repository.FindUserById(id)
+	fmt.Println(user)
 	if user == nil {
 		response.NotFound(fmt.Sprintf("User with ID %d not found", id), nil)
 		return
@@ -58,11 +59,20 @@ func CreateUser(c *gin.Context) {
 		response.BadRequest("Invalid input data", err.Error())
 		return
 	}
+	file, _ := c.FormFile("image")
 
-	file, err := c.FormFile("image")
+	if userInput.Email == "" {
+		response.BadRequest("Email required", nil)
+		return
+	}
 
-	if err != nil {
-		response.BadRequest("Image file is required", err.Error())
+	if userInput.Password == "" {
+		response.BadRequest("Password required", nil)
+		return
+	}
+
+	if userInput.FirstName == nil {
+		response.BadRequest("Firstname required", nil)
 		return
 	}
 
@@ -82,17 +92,22 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	allowedExts := []string{".jpg", ".jpeg", ".png"}
-	maxSize := int64(5 << 20) // 5MB
-	uploadDir := "public/images"
+	if file != nil {
+		allowedExts := []string{".jpg", ".jpeg", ".png"}
+		maxSize := int64(5 << 20) // 5 MB
+		uploadDir := "public/images"
 
-	imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
-	if err != nil {
-		response.BadRequest("Failed to upload image", err.Error())
-		return
+		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
+		if err != nil {
+			response.BadRequest("Failed to upload image", err.Error())
+			return
+		}
+
+		userInput.Image = &imagePath
+	} else {
+		imageDefault := ""
+		userInput.Image = &imageDefault
 	}
-
-	userInput.Image = &imagePath
 
 	hashedPassword := pkg.GenerateHash(userInput.Password)
 	userInput.Password = hashedPassword
@@ -107,94 +122,61 @@ func CreateUser(c *gin.Context) {
 	response.Success("Success created user", userInput)
 }
 
-// func CreateUser(c *gin.Context) {
-// 	response := pkg.NewResponse(c)
-
-// 	var userInput models.UserDetails
-// 	if err := c.ShouldBind(&userInput); err != nil {
-// 		fmt.Printf("Failed to bind JSON: %v\n", err)
-// 		response.BadRequest("Invalid input data", err.Error())
-// 		return
-// 	}
-
-// 	if !handlers.IsValidEmail(userInput.Email) {
-// 		response.BadRequest("Invalid email format", nil)
-// 		return
-// 	}
-
-// 	if !handlers.IsValidPassword(userInput.Password) {
-// 		response.BadRequest("Password must be at least 8 characters long", nil)
-// 		return
-// 	}
-
-// 	userEmail, _ := repository.FindUserByEmail(userInput.Email)
-// 	if userEmail != nil {
-// 		response.BadRequest("Email already exist", nil)
-// 		return
-// 	}
-
-// 	// Hash password sebelum menyimpan ke database
-// 	hashedPassword := pkg.GenerateHash(userInput.Password)
-// 	userInput.Password = hashedPassword
-
-// 	// Panggil fungsi repository untuk menyimpan data
-// 	userId, err := repository.InsertUser(&userInput)
-// 	if err != nil {
-// 		response.InternalServerError("Failed to create user and profile", err.Error())
-// 		return
-// 	}
-
-// 	// Tambahkan ID yang baru saja dibuat ke dalam respons
-// 	userInput.Id = userId
-// 	response.Success("User and profile created successfully", userInput)
-// }
-
 func UpdateUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		response.BadRequest("Invalid user ID", err.Error())
+	// Ambil UserID dari token
+	userId, exists := c.Get("UserId")
+	if !exists {
+		response.Unauthorized("Unauthorized", nil)
 		return
 	}
+	id, ok := userId.(int)
+	fmt.Println("ID dari token:", id)
+	if !ok {
+		response.InternalServerError("Failed to parse user ID from token", nil)
+		return
+	}
+
+	// Cari data user dari database
 	user, _ := repository.FindUserById(id)
+	fmt.Println("EXISTING USER ", user)
 	if user == nil {
 		response.NotFound(fmt.Sprintf("User with ID %d not found", id), nil)
 		return
 	}
 
+	// Bind data input dari request
 	var userInput models.UserDetails
 	if err := c.ShouldBind(&userInput); err != nil {
-		fmt.Printf("Failed to bind JSON: %v\n", err)
 		response.BadRequest("Invalid input data", err.Error())
 		return
 	}
 
-	if !handlers.IsValidEmail(userInput.Email) {
-		response.BadRequest("Invalid email format", nil)
-		return
-	}
-
-	userEmail, _ := repository.FindUserByEmail(userInput.Email)
-	if userEmail != nil {
-		response.BadRequest("Email already exist", nil)
-		return
-	}
-
-	if !handlers.IsValidPassword(userInput.Password) {
-		response.BadRequest("Password must be at least 8 characters long", nil)
-		return
-	}
-
-	fmt.Printf("Request Body: %+v\n", userInput)
-
+	// Validasi Email
 	if userInput.Email != "" {
-		user.Email = userInput.Email
+		if !handlers.IsValidEmail(userInput.Email) {
+			response.BadRequest("Invalid email format", nil)
+			return
+		}
+		// Cek jika email sudah digunakan user lain
+		userEmail, _ := repository.FindUserByEmail(userInput.Email)
+		if userEmail != nil && userEmail.Id != id {
+			response.BadRequest("Email already exists", nil)
+			return
+		}
 	}
+
+	// Validasi Password
 	if userInput.Password != "" {
-		hashded := pkg.GenerateHash(userInput.Password)
-		user.Password = hashded
+		if !handlers.IsValidPassword(userInput.Password) {
+			response.BadRequest("Password must be at least 8 characters long", nil)
+			return
+		}
+		hashed := pkg.GenerateHash(userInput.Password)
+		user.Password = hashed
 	}
+
 	if userInput.FirstName != nil {
 		user.FirstName = userInput.FirstName
 	}
@@ -204,17 +186,33 @@ func UpdateUser(c *gin.Context) {
 	if userInput.PhoneNumber != nil {
 		user.PhoneNumber = userInput.PhoneNumber
 	}
-	if userInput.Image != nil {
-		user.Image = userInput.Image
+
+	// Proses upload gambar jika ada
+	file, _ := c.FormFile("image")
+	if file != nil {
+		allowedExts := []string{".jpg", ".jpeg", ".png"}
+		maxSize := int64(5 << 20) // 5MB
+		uploadDir := "public/images"
+
+		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
+		if err != nil {
+			response.BadRequest("Failed to upload image", err.Error())
+			return
+		}
+		user.Image = &imagePath
 	}
 
-	err = repository.EditUser(id, user)
+	// Debugging: Periksa data userInput sebelum mengupdate
+	fmt.Printf("USER YANG DIKIRIM : %+v\n", user)
+
+	// Update data user
+	err := repository.EditUser(id, user)
 	if err != nil {
 		response.InternalServerError("Failed to update user and profile", err.Error())
 		return
 	}
 
-	response.Success("Success updated user", user)
+	response.Success("User updated successfully", user)
 }
 
 func DeleteUser(c *gin.Context) {
