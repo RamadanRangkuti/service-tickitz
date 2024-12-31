@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"RamadanRangkuti/service-tickitz/internal/dto"
 	"RamadanRangkuti/service-tickitz/internal/models"
-	"RamadanRangkuti/service-tickitz/internal/models/dto"
 	"RamadanRangkuti/service-tickitz/internal/repositories"
 	"RamadanRangkuti/service-tickitz/pkg"
 	"fmt"
