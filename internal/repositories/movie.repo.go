@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"RamadanRangkuti/service-tickitz/internal/models"

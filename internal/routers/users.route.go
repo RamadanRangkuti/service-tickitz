@@ -1,7 +1,7 @@
 package routers
 
 import (
-	handlers "RamadanRangkuti/service-tickitz/internal/handlers/users"
+	"RamadanRangkuti/service-tickitz/internal/handlers"
 	"RamadanRangkuti/service-tickitz/internal/middlewares"
 
 	"github.com/gin-gonic/gin"

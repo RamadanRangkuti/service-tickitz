@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"RamadanRangkuti/service-tickitz/internal/models"
@@ -16,6 +16,7 @@ func RegisterUser(user *models.Auth) (*models.Auth, error) {
 
 	var newUser models.Auth
 
+	fmt.Println("Query Input:", user.Email, user.Password, user.RoleId)
 	err = conn.QueryRow(context.Background(), `
 		INSERT INTO users(email, password, role_id)
 		VALUES ($1, $2, $3)

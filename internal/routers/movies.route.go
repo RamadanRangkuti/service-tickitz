@@ -1,7 +1,7 @@
 package routers
 
 import (
-	handlers "RamadanRangkuti/service-tickitz/internal/handlers/movies"
+	"RamadanRangkuti/service-tickitz/internal/handlers"
 
 	"github.com/gin-gonic/gin"
 )

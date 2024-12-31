@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"RamadanRangkuti/service-tickitz/internal/models"
-	"RamadanRangkuti/service-tickitz/internal/repository"
+	"RamadanRangkuti/service-tickitz/internal/repositories"
 	"RamadanRangkuti/service-tickitz/pkg"
 	"context"
 	"encoding/json"
@@ -32,7 +32,7 @@ func GetMovies(c *gin.Context) {
 		rawData := []byte(get.Val())
 		json.Unmarshal(rawData, &movies)
 	} else {
-		movies, err := repository.FindAllMovies(page, limit, order, sortBy, search)
+		movies, err := repositories.FindAllMovies(page, limit, order, sortBy, search)
 		if err != nil {
 			response.InternalServerError("Failed to fetch movies", err.Error())
 			return
@@ -47,7 +47,7 @@ func GetMovies(c *gin.Context) {
 		rawData := []byte(getCount.Val())
 		json.Unmarshal(rawData, &count)
 	} else {
-		count = repository.CountMovie(search)
+		count = repositories.CountMovie(search)
 		encoded, _ := json.Marshal(count)
 		pkg.Redis().Set(context.Background(), fmt.Sprintf("count+%s", c.Request.RequestURI), string(encoded), 0)
 	}
@@ -67,6 +67,7 @@ func GetMovies(c *gin.Context) {
 		pageInfo.PrevPage = 0
 	}
 
+	fmt.Println(movies)
 	response.GetAllSuccess("Success Get All Movies", movies, pageInfo)
 }
 
@@ -78,7 +79,7 @@ func GetMovieById(c *gin.Context) {
 		response.BadRequest("Invalid input", err.Error())
 		return
 	}
-	movie, err := repository.FindMovieById(id)
+	movie, err := repositories.FindMovieById(id)
 	if err != nil {
 		response.InternalServerError("Failed to fetch movie", err.Error())
 		return

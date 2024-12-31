@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"RamadanRangkuti/service-tickitz/internal/models"
@@ -17,14 +17,17 @@ func FindALlUser(page int, limit int, order string, sortBy string, search string
 	defer conn.Close(context.Background())
 	offset := (page - 1) * limit
 	search = fmt.Sprintf("%%%s%%", search)
+
 	query := fmt.Sprintf(`
-	SELECT u.id, u.email, u.password, ur.role, p.first_name, p.last_name, 
-	p.phone_number, p.image, u.created_at, u.updated_at 
-	FROM users u LEFT JOIN user_roles ur ON u.role_id = ur.id 
+	SELECT u.id, u.email, u.password, ur.role, p.first_name, p.last_name,
+	p.phone_number, p.image, u.created_at, u.updated_at
+	FROM users u 
+	LEFT JOIN user_roles ur ON u.role_id = ur.id
 	LEFT JOIN profiles p ON p.user_id = u.id
-	WHERE LOWER (p.first_name) ILIKE($1)
+	WHERE LOWER(COALESCE(p.first_name, '')) ILIKE $1
 	 ORDER BY %s %s LIMIT $2 OFFSET $3
 	`, sortBy, order)
+
 	rows, err := conn.Query(context.Background(), query, search, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %v", err)
@@ -70,7 +73,6 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 	}
 	defer conn.Close(context.Background())
 	fmt.Println("data diterima ===> : ", userDetails)
-	// Mulai transaksi
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %v", err)
@@ -82,7 +84,6 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 	}()
 
 	var userId int
-	// Update tabel `users`
 	userQuery := `
 		INSERT INTO users (email, password, role_id)
 		VALUES($1, $2, $3) returning id
@@ -93,7 +94,6 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 		return 0, fmt.Errorf("failed to insert into users table: %v", err)
 	}
 
-	// Insert ke tabel `profiles`
 	profileQuery := `
 		INSERT INTO profiles (user_id, first_name, last_name, phone_number, image) 
 		VALUES ($1, $2, $3, $4, $5)
@@ -104,7 +104,6 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 		return 0, fmt.Errorf("failed to insert into profiles table: %v", err)
 	}
 
-	// Commit transaksi
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return 0, fmt.Errorf("failed to commit transaction: %v", err)
