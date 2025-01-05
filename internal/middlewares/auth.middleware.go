@@ -39,7 +39,7 @@ func RoleCheck(requiredRole int) gin.HandlerFunc {
 		role, exists := c.Get("UserRole")
 		if !exists {
 			//forbidden
-			response.Unauthorized("Unauthorized", nil)
+			response.Forbidden("Access denied", nil)
 			return
 		}
 
@@ -50,7 +50,7 @@ func RoleCheck(requiredRole int) gin.HandlerFunc {
 		}
 
 		if userRole != requiredRole {
-			response.Unauthorized("Access denied", nil)
+			response.Forbidden("Access denied", nil)
 			return
 		}
 

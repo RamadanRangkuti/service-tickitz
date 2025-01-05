@@ -1,5 +1,113 @@
 basePath: /
 definitions:
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.LoginResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      last_name:
+        type: string
+      phone_number:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.CinemaSeat:
+    properties:
+      category:
+        type: string
+      is_available:
+        type: boolean
+      price:
+        type: number
+      seat_number:
+        type: string
+    type: object
+  models.GetCinema:
+    properties:
+      city:
+        type: string
+      date:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      time:
+        type: string
+    type: object
+  models.MovieDetails:
+    properties:
+      banner:
+        type: string
+      casts:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      director_name:
+        type: string
+      duration:
+        type: integer
+      genres:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      image:
+        type: string
+      release_date:
+        type: string
+      synopsis:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Ticket:
+    properties:
+      date:
+        description: 'Format: 07 Jul 2025'
+        type: string
+      movie_title:
+        type: string
+      quantity:
+        type: integer
+      seats:
+        description: 'Example: ["A1", "A2", "A3"]'
+        items:
+          type: string
+        type: array
+      time:
+        description: 'Format: 2:00 PM'
+        type: string
+      total_price:
+        type: number
+    type: object
   models.User:
     properties:
       created_at:
@@ -21,14 +129,540 @@ definitions:
       updated_at:
         type: string
     type: object
+  pkg.PageInfo:
+    properties:
+      currentPage:
+        type: integer
+      nextPage:
+        type: integer
+      prevPage:
+        type: integer
+      totalData:
+        type: integer
+      totalPage:
+        type: integer
+    type: object
+  pkg.Response:
+    properties:
+      error: {}
+      message:
+        type: string
+      pageInfo:
+        $ref: '#/definitions/pkg.PageInfo'
+      result: {}
+      success:
+        type: boolean
+    type: object
 info:
   contact: {}
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Authenticate user and return a JWT token
+      parameters:
+      - description: User email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: User password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful with token
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Login user
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Register a new user with email, password, and role
+      parameters:
+      - description: User email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: User password (min 8 characters)
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User successfully registered
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Invalid input or email already registered
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /movies:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Get all movies with pagination, sorting, and search
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: id
+        description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - default: asc
+        description: Order of sorting (asc or desc)
+        in: query
+        name: order
+        type: string
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDetails'
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get all movies
+      tags:
+      - Movies
+  /movies/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific movie by its ID
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.MovieDetails'
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "404":
+          description: Movie not found
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get movie by ID
+      tags:
+      - Movies
+  /order/cinemas:
+    get:
+      consumes:
+      - multipart/form-data
+      description: Retrieve a list of cinemas based on the movie ID, location, date,
+        and time.
+      parameters:
+      - description: Movie ID
+        in: query
+        name: movie_id
+        required: true
+        type: integer
+      - description: Location
+        in: query
+        name: location
+        required: true
+        type: string
+      - description: 'Date (format: YYYY-MM-DD)'
+        in: query
+        name: date
+        required: true
+        type: string
+      - description: 'Time (format: HH:mm:ss)'
+        in: query
+        name: time
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.GetCinema'
+                  type: array
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: Find cinemas by movie and location
+      tags:
+      - Cinemas
+  /order/payments:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Process a payment for a given transaction ID and update its status.
+      parameters:
+      - description: Transaction ID
+        in: formData
+        name: transaction_id
+        required: true
+        type: integer
+      - description: Payment Method
+        in: formData
+        name: payment_method
+        required: true
+        type: string
+      - description: VA Number
+        in: formData
+        name: virtual_account_number
+        required: true
+        type: string
+      - description: Ammount
+        in: formData
+        name: amount
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment processed successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: Process a payment for a transaction
+      tags:
+      - Transactions
+  /order/seats:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Get a list of available seats for a specific movie and cinema schedule.
+      parameters:
+      - description: Movie ID
+        in: formData
+        name: movie_id
+        required: true
+        type: integer
+      - description: Cinema ID
+        in: formData
+        name: cinema_id
+        required: true
+        type: integer
+      - description: 'Date (format: YYYY-MM-DD)'
+        in: formData
+        name: date
+        required: true
+        type: string
+      - description: 'Time (format: HH:mm:ss)'
+        in: formData
+        name: time
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.CinemaSeat'
+                  type: array
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: Retrieve available seats for a cinema
+      tags:
+      - Seats
+  /order/ticket:
+    get:
+      consumes:
+      - multipart/form-data
+      description: Get ticket information based on a transaction ID.
+      parameters:
+      - description: Transaction ID
+        in: query
+        name: transaction_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ticket details retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Ticket'
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: Retrieve ticket details for a transaction
+      tags:
+      - Tickets
+  /order/transactions:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Process a payment for a given transaction ID and update its status.
+      parameters:
+      - description: User ID
+        in: formData
+        name: user_id
+        required: true
+        type: integer
+      - description: Movie ID
+        in: formData
+        name: movie_id
+        required: true
+        type: integer
+      - description: Cinema ID
+        in: formData
+        name: cinema_id
+        required: true
+        type: integer
+      - description: 'Date (format: YYYY-MM-DD)'
+        in: formData
+        name: date
+        required: true
+        type: string
+      - description: 'Time (format: HH:mm:ss)'
+        in: formData
+        name: time
+        required: true
+        type: string
+      - description: Location
+        in: formData
+        name: location
+        required: true
+        type: string
+      - collectionFormat: multi
+        description: Seat Numbers
+        in: formData
+        items:
+          type: string
+        name: seat_numbers[]
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Invalid input
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: Process a payment for a transaction
+      tags:
+      - Transactions
   /users:
     get:
       consumes:
       - application/x-www-form-urlencoded
-      description: get all user
+      description: Get all users with pagination, sorting, and search
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: id
+        description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - default: asc
+        description: Order of sorting (asc or desc)
+        in: query
+        name: order
+        type: string
+      - description: Search query
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -36,15 +670,24 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
       security:
       - ApiKeyAuth: []
-      summary: ping example
+      summary: Get all users
       tags:
       - Users
     post:
       consumes:
       - multipart/form-data
-      description: get all user
+      description: Create a new user with the provided details
       parameters:
       - in: formData
         name: email
@@ -64,7 +707,130 @@ paths:
       - in: formData
         name: role
         type: string
-      - description: Profile user
+      - description: Profile picture
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Creat new user
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Delete the logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: get detail user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get detail user
+      tags:
+      - Users
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Update an existing user
+      parameters:
+      - in: formData
+        name: email
+        type: string
+      - in: formData
+        name: first_name
+        type: string
+      - in: formData
+        name: last_name
+        type: string
+      - in: formData
+        name: password
+        type: string
+      - in: formData
+        name: phone_number
+        type: string
+      - description: Profile picture
         in: formData
         name: image
         type: file
@@ -74,48 +840,42 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
-      security:
-      - ApiKeyAuth: []
-      summary: ping example
-      tags:
-      - Users
-  /users/{id}:
-    delete:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: get all user
-      parameters:
-      - description: delete user id
-        in: path
-        name: id
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.User'
+              type: object
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/models.User'
-      security:
-      - ApiKeyAuth: []
-      summary: ping example
-      tags:
-      - Users
-    get:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: get all user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
           schema:
-            $ref: '#/definitions/models.User'
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
       security:
       - ApiKeyAuth: []
-      summary: ping example
+      summary: Update user
       tags:
       - Users
 securityDefinitions:

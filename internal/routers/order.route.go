@@ -7,9 +7,9 @@ import (
 )
 
 func OrderRouter(r *gin.RouterGroup) {
-	r.POST("/", handlers.CreateTransaction)
-	r.GET("/cinema", handlers.GetCinema)
-	r.GET("/seats", handlers.GetAvailableSeats)
-	r.POST("/payment", handlers.Payment)
+	r.POST("/transactions", handlers.CreateTransaction)
+	r.GET("/cinemas", handlers.GetCinema)
+	r.POST("/seats", handlers.GetAvailableSeats)
+	r.POST("/payments", handlers.Payment)
 	r.GET("/ticket", handlers.GetTicket)
 }

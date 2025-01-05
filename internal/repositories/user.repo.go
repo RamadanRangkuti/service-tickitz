@@ -115,9 +115,10 @@ func InsertUser(userDetails *models.UserDetails) (int, error) {
 func EditUser(userId int, userDetails *models.UserDetails) error {
 	conn, err := pkg.DB()
 	if err != nil {
-		fmt.Println("connection failed", err)
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 	defer conn.Close(context.Background())
+
 	// Mulai transaksi
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
@@ -128,6 +129,8 @@ func EditUser(userId int, userDetails *models.UserDetails) error {
 			tx.Rollback(context.Background())
 		}
 	}()
+
+	// Update tabel `users`
 	userQuery := `
 		UPDATE users
 		SET email = $1, password = $2, updated_at = current_timestamp
@@ -214,4 +217,11 @@ func CountUser(search string) int {
 	`, search).Scan(&total)
 
 	return total
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

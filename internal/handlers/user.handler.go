@@ -12,13 +12,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PingExample godoc
-// @Summary ping example
+// GetAllUser godoc
+// @Summary Get all users
 // @Schemes
-// @Description get all user
+// @Description Get all users with pagination, sorting, and search
 // @Tags Users
 // @Accept x-www-form-urlencoded
 // @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(5)
+// @Param sortBy query string false "Field to sort by" default(id)
+// @Param order query string false "Order of sorting (asc or desc)" default(asc)
+// @Param search query string false "Search query"
+// @Success 200 {object} pkg.Response{data=[]models.User,meta=pkg.PageInfo}
+// @Failure 500 {object} pkg.Response{error=string}
 // @Success 200 {object} models.User
 // @Security ApiKeyAuth
 // @Router /users [get]
@@ -58,14 +65,16 @@ func GetAllUser(c *gin.Context) {
 	response.GetAllSuccess("Success Get All Users", user, pageInfo)
 }
 
-// PingExample godoc
-// @Summary ping example
+// GetDetailUser godoc
+// @Summary Get detail user
 // @Schemes
-// @Description get all user
+// @Description get detail user
 // @Tags Users
 // @Accept x-www-form-urlencoded
 // @Produce json
-// @Success 200 {object} models.User
+// @Success 200 {object} dto.UserResponse "Successful response"
+// @Failure 404 {object} dto.ErrorResponse "User not found"
+// @Failure 500 {object} dto.ErrorResponse "Internal server error"
 // @Security ApiKeyAuth
 // @Router /users/{id} [get]
 func GetUserById(c *gin.Context) {
@@ -98,16 +107,18 @@ func GetUserById(c *gin.Context) {
 	response.Success("Success get user", user)
 }
 
-// PingExample godoc
-// @Summary ping example
+// CreateUser godoc
+// @Summary Creat new user
 // @Schemes
-// @Description get all user
+// @Description Create a new user with the provided details
 // @Tags Users
-// @Accept mpfd
+// @Accept multipart/form-data
 // @Produce json
-// @Param userInput formData dto.CreateUserDTO false "Create user"
-// @Param image formData file false "Profile user"
-// @Success 200 {object} models.User
+// @Param userInput formData dto.CreateUserDTO true "Create user"
+// @Param image formData file false "Profile picture"
+// @Success 201 {object} pkg.Response{data=models.User}
+// @Failure 400 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
 // @Security ApiKeyAuth
 // @Router /users [post]
 func CreateUser(c *gin.Context) {
@@ -118,6 +129,7 @@ func CreateUser(c *gin.Context) {
 		response.BadRequest("Invalid input data", err.Error())
 		return
 	}
+	fmt.Println("data diinput", userInput)
 	file, _ := c.FormFile("image")
 
 	if userInput.Email == "" {
@@ -153,7 +165,7 @@ func CreateUser(c *gin.Context) {
 
 	if file != nil {
 		allowedExts := []string{".jpg", ".jpeg", ".png"}
-		maxSize := int64(5 << 20) // 5 MB
+		maxSize := int64(2 << 20) // 2 MB
 		uploadDir := "public/images"
 
 		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
@@ -181,6 +193,21 @@ func CreateUser(c *gin.Context) {
 	response.Success("Success created user", userInput)
 }
 
+// UpdateUser godoc
+// @Summary Update user
+// @Schemes
+// @Description Update an existing user
+// @Tags Users
+// @Accept multipart/form-data
+// @Produce json
+// @Param userInput formData dto.UpdateUserDTO true "Update user"
+// @Param image formData file false "Profile picture"
+// @Success 200 {object} pkg.Response{data=models.User}
+// @Failure 400 {object} pkg.Response{error=string}
+// @Failure 404 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
+// @Security ApiKeyAuth
+// @Router /users/{id} [patch]
 func UpdateUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
@@ -191,49 +218,49 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	id, ok := userId.(int)
-
 	if !ok {
 		response.InternalServerError("Failed to parse user ID from token", nil)
 		return
 	}
 
+	// Ambil data user yang ada
 	user, _ := repositories.FindUserById(id)
-	fmt.Println("EXISTING USER ", user)
 	if user == nil {
 		response.NotFound(fmt.Sprintf("User with ID %d not found", id), nil)
 		return
 	}
 
-	var userInput models.UserDetails
+	// Validasi input
+	var userInput dto.UpdateUserDTO
 	if err := c.ShouldBind(&userInput); err != nil {
 		response.BadRequest("Invalid input data", err.Error())
 		return
 	}
 
-	// Validasi Email
-	if userInput.Email != "" {
-		if !IsValidEmail(userInput.Email) {
+	// Validasi email
+	if userInput.Email != nil {
+		if !IsValidEmail(*userInput.Email) {
 			response.BadRequest("Invalid email format", nil)
 			return
 		}
-		// Cek jika email sudah digunakan user lain
-		userEmail, _ := repositories.FindUserByEmail(userInput.Email)
-		if userEmail != nil && userEmail.Id != id {
+		existingUser, _ := repositories.FindUserByEmail(*userInput.Email)
+		if existingUser != nil && existingUser.Id != id {
 			response.BadRequest("Email already exists", nil)
 			return
 		}
+		user.Email = *userInput.Email
 	}
 
-	// Validasi Password
-	if userInput.Password != "" {
-		if !IsValidPassword(userInput.Password) {
+	// Validasi password
+	if userInput.Password != nil {
+		if !IsValidPassword(*userInput.Password) {
 			response.BadRequest("Password must be at least 8 characters long", nil)
 			return
 		}
-		hashed := pkg.GenerateHash(userInput.Password)
-		user.Password = hashed
+		user.Password = pkg.GenerateHash(*userInput.Password)
 	}
 
+	// Update data profil jika ada
 	if userInput.FirstName != nil {
 		user.FirstName = userInput.FirstName
 	}
@@ -244,11 +271,11 @@ func UpdateUser(c *gin.Context) {
 		user.PhoneNumber = userInput.PhoneNumber
 	}
 
-	// Proses upload gambar jika ada
+	// Proses upload gambar
 	file, _ := c.FormFile("image")
 	if file != nil {
 		allowedExts := []string{".jpg", ".jpeg", ".png"}
-		maxSize := int64(5 << 20) // 5MB
+		maxSize := int64(2 << 20) // 2MB
 		uploadDir := "public/images"
 
 		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
@@ -259,10 +286,10 @@ func UpdateUser(c *gin.Context) {
 		user.Image = &imagePath
 	}
 
-	// Debugging: Periksa data userInput sebelum mengupdate
-	fmt.Printf("USER YANG DIKIRIM : %+v\n", user)
+	// Debugging: Periksa data sebelum update
+	fmt.Printf("Updated User Data: %+v\n", user)
 
-	// Update data user
+	// Update user dan profil di database
 	err := repositories.EditUser(id, user)
 	if err != nil {
 		response.InternalServerError("Failed to update user and profile", err.Error())
@@ -272,188 +299,29 @@ func UpdateUser(c *gin.Context) {
 	response.Success("User updated successfully", user)
 }
 
-// func CreateUser(c *gin.Context) {
-// 	response := pkg.NewResponse(c)
-
-// 	var userInput models.UserDetails
-// 	if err := c.ShouldBind(&userInput); err != nil {
-// 		fmt.Printf("Failed to bind JSON: %v\n", err)
-// 		response.BadRequest("Invalid input data", err.Error())
-// 		return
-// 	}
-// 	file, _ := c.FormFile("image")
-
-// 	if userInput.Email == "" {
-// 		response.BadRequest("Email required", nil)
-// 		return
-// 	}
-
-// 	if userInput.Password == "" {
-// 		response.BadRequest("Password required", nil)
-// 		return
-// 	}
-
-// 	if userInput.FirstName == nil {
-// 		response.BadRequest("Firstname required", nil)
-// 		return
-// 	}
-
-// 	if !handlers.IsValidEmail(userInput.Email) {
-// 		response.BadRequest("Invalid email format", nil)
-// 		return
-// 	}
-
-// 	if !handlers.IsValidPassword(userInput.Password) {
-// 		response.BadRequest("Password must be at least 8 characters long", nil)
-// 		return
-// 	}
-
-// 	userEmail, _ := repositories.FindUserByEmail(userInput.Email)
-// 	if userEmail != nil {
-// 		response.BadRequest("Email already exist", nil)
-// 		return
-// 	}
-
-// 	if file != nil {
-// 		allowedExts := []string{".jpg", ".jpeg", ".png"}
-// 		maxSize := int64(5 << 20) // 5 MB
-// 		uploadDir := "public/images"
-
-// 		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
-// 		if err != nil {
-// 			response.BadRequest("Failed to upload image", err.Error())
-// 			return
-// 		}
-
-// 		userInput.Image = &imagePath
-// 	} else {
-// 		imageDefault := ""
-// 		userInput.Image = &imageDefault
-// 	}
-
-// 	hashedPassword := pkg.GenerateHash(userInput.Password)
-// 	userInput.Password = hashedPassword
-
-// 	userId, err := repositories.InsertUser(&userInput)
-// 	if err != nil {
-// 		response.InternalServerError("Failed to create profile", err.Error())
-// 		return
-// 	}
-
-// 	userInput.Id = userId
-// 	response.Success("Success created user", userInput)
-// }
-
-// func UpdateUser(c *gin.Context) {
-// 	response := pkg.NewResponse(c)
-
-// 	// Ambil UserID dari token
-// 	userId, exists := c.Get("UserId")
-// 	if !exists {
-// 		response.Unauthorized("Unauthorized", nil)
-// 		return
-// 	}
-// 	id, ok := userId.(int)
-// 	fmt.Println("ID dari token:", id)
-// 	if !ok {
-// 		response.InternalServerError("Failed to parse user ID from token", nil)
-// 		return
-// 	}
-
-// 	// Cari data user dari database
-// 	user, _ := repositories.FindUserById(id)
-// 	fmt.Println("EXISTING USER ", user)
-// 	if user == nil {
-// 		response.NotFound(fmt.Sprintf("User with ID %d not found", id), nil)
-// 		return
-// 	}
-
-// 	// Bind data input dari request
-// 	var userInput models.UserDetails
-// 	if err := c.ShouldBind(&userInput); err != nil {
-// 		response.BadRequest("Invalid input data", err.Error())
-// 		return
-// 	}
-
-// 	// Validasi Email
-// 	if userInput.Email != "" {
-// 		if !IsValidEmail(userInput.Email) {
-// 			response.BadRequest("Invalid email format", nil)
-// 			return
-// 		}
-// 		// Cek jika email sudah digunakan user lain
-// 		userEmail, _ := repositories.FindUserByEmail(userInput.Email)
-// 		if userEmail != nil && userEmail.Id != id {
-// 			response.BadRequest("Email already exists", nil)
-// 			return
-// 		}
-// 	}
-
-// 	// Validasi Password
-// 	if userInput.Password != "" {
-// 		if !IsValidPassword(userInput.Password) {
-// 			response.BadRequest("Password must be at least 8 characters long", nil)
-// 			return
-// 		}
-// 		hashed := pkg.GenerateHash(userInput.Password)
-// 		user.Password = hashed
-// 	}
-
-// 	if userInput.FirstName != nil {
-// 		user.FirstName = userInput.FirstName
-// 	}
-// 	if userInput.LastName != nil {
-// 		user.LastName = userInput.LastName
-// 	}
-// 	if userInput.PhoneNumber != nil {
-// 		user.PhoneNumber = userInput.PhoneNumber
-// 	}
-
-// 	// Proses upload gambar jika ada
-// 	file, _ := c.FormFile("image")
-// 	if file != nil {
-// 		allowedExts := []string{".jpg", ".jpeg", ".png"}
-// 		maxSize := int64(5 << 20) // 5MB
-// 		uploadDir := "public/images"
-
-// 		imagePath, err := pkg.UploadImage(c, file, allowedExts, maxSize, uploadDir)
-// 		if err != nil {
-// 			response.BadRequest("Failed to upload image", err.Error())
-// 			return
-// 		}
-// 		user.Image = &imagePath
-// 	}
-
-// 	// Debugging: Periksa data userInput sebelum mengupdate
-// 	fmt.Printf("USER YANG DIKIRIM : %+v\n", user)
-
-// 	// Update data user
-// 	err := repositories.EditUser(id, user)
-// 	if err != nil {
-// 		response.InternalServerError("Failed to update user and profile", err.Error())
-// 		return
-// 	}
-
-// 	response.Success("User updated successfully", user)
-// }
-
-// PingExample godoc
-// @Summary ping example
+// DeleteUser godoc
+// @Summary Delete user
 // @Schemes
-// @Description get all user
+// @Description Delete the logged-in user
 // @Tags Users
 // @Accept x-www-form-urlencoded
 // @Produce json
-// @Param id path int false "delete user id"
-// @Success 200 {object} models.User
+// @Success 200 {object} pkg.Response{data=string}
+// @Failure 404 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
 // @Security ApiKeyAuth
 // @Router /users/{id} [delete]
 func DeleteUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		response.BadRequest("Invalid user ID", err.Error())
+	userId, exists := c.Get("UserId")
+	if !exists {
+		response.Unauthorized("Unauthorized", nil)
+		return
+	}
+	id, ok := userId.(int)
+	if !ok {
+		response.InternalServerError("Failed to parse user ID from token", nil)
 		return
 	}
 
@@ -463,7 +331,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = repositories.RemoveUser(id)
+	err := repositories.RemoveUser(id)
 	if err != nil {
 		response.InternalServerError("Failed to delete user and profile", err.Error())
 		return

@@ -24,7 +24,7 @@ func FindAllMovies(page int, limit int, order string, sortBy string, search stri
         m.title, 
         m.synopsis, 
         m.duration, 
-        m.realease_date, 
+        m.release_date, 
         m.image, 
         m.banner,
         COALESCE(ARRAY_AGG(DISTINCT mc.name), '{}') AS casts,
@@ -149,7 +149,7 @@ func FindMovieById(id int) (*models.MovieDetails, error) {
         m.title,
         m.synopsis,
         m.duration,
-        m.realease_date,
+        m.release_date,
         m.image,
         m.banner,
         COALESCE(ARRAY_AGG(DISTINCT mc.name), '{}') AS casts,
@@ -164,7 +164,7 @@ func FindMovieById(id int) (*models.MovieDetails, error) {
     WHERE m.id = $1
     GROUP BY m.id, md.name`
 
-	err = conn.QueryRow(context.Background(), query, id).Scan(&movie.Id, &movie.Title, &movie.Synopsis, &movie.Duration, &movie.RealeaseDate, &movie.Image, &movie.Banner, &movie.Casts, &movie.Genres, &movie.Director, &movie.CreatedAt, &movie.UpdatedAt)
+	err = conn.QueryRow(context.Background(), query, id).Scan(&movie.Id, &movie.Title, &movie.Synopsis, &movie.Duration, &movie.ReleaseDate, &movie.Image, &movie.Banner, &movie.Casts, &movie.Genres, &movie.Director, &movie.CreatedAt, &movie.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

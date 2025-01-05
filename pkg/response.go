@@ -72,6 +72,15 @@ func (r *Responder) Unauthorized(message string, err interface{}) {
 	r.C.Abort()
 }
 
+func (r *Responder) Forbidden(message string, err interface{}) {
+	r.C.JSON(http.StatusForbidden, Response{
+		Success: false,
+		Message: message,
+		Error:   err,
+	})
+	r.C.Abort()
+}
+
 func (r *Responder) NotFound(message string, err interface{}) {
 	r.C.JSON(http.StatusNotFound, Response{
 		Success: false,

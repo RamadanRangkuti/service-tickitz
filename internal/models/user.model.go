@@ -16,7 +16,7 @@ type User struct {
 }
 
 type UserDetails struct {
-	Id          int     `json:"id" form:"id"`
+	Id          int     `json:"-" form:"id"`
 	Email       string  `json:"email" form:"email"`
 	Password    string  `json:"-" form:"password"`
 	Role        string  `json:"-" form:"role"`

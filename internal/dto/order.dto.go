@@ -15,24 +15,24 @@ type GetAvailableSeatsDTO struct {
 }
 
 type CreateTransactionDTO struct {
-	UserId      int      `json:"user_id" binding:"required"`      // ID pengguna yang melakukan transaksi
-	MovieId     int      `json:"movie_id" binding:"required"`     // ID film
-	CinemaId    int      `json:"cinema_id" binding:"required"`    // ID bioskop
-	Date        string   `json:"date" binding:"required"`         // Tanggal jadwal (format: YYYY-MM-DD)
-	Time        string   `json:"time" binding:"required"`         // Waktu jadwal (format: HH:mm:ss)
-	Location    string   `json:"location" binding:"required"`     // Lokasi bioskop
-	SeatNumbers []string `json:"seat_numbers" binding:"required"` // Daftar nomor kursi
+	UserId      int      `form:"user_id" binding:"required"`        // ID pengguna yang melakukan transaksi
+	MovieId     int      `form:"movie_id" binding:"required"`       // ID film
+	CinemaId    int      `form:"cinema_id" binding:"required"`      // ID bioskop
+	Date        string   `form:"date" binding:"required"`           // Tanggal jadwal (format: YYYY-MM-DD)
+	Time        string   `form:"time" binding:"required"`           // Waktu jadwal (format: HH:mm:ss)
+	Location    string   `form:"location" binding:"required"`       // Lokasi bioskop
+	SeatNumbers []string `form:"seat_numbers[]" binding:"required"` // Daftar nomor kursi
 }
 
 type CreatePaymentDTO struct {
-	TransactionId        int     `json:"transaction_id" binding:"required"`
-	PaymentMethod        string  `json:"payment_method" binding:"required"`
-	VirtualAccountNumber string  `json:"virtual_account_number" binding:"required"`
-	Amount               float64 `json:"amount" binding:"required"`
+	TransactionId        int     `form:"transaction_id" binding:"required"`
+	PaymentMethod        string  `form:"payment_method" binding:"required"`
+	VirtualAccountNumber string  `form:"virtual_account_number" binding:"required"`
+	Amount               float64 `form:"amount" binding:"required"`
 }
 
 type GetTicketDTO struct {
-	TransactionId int `json:"transaction_id" binding:"required"`
+	TransactionId int `form:"transaction_id" binding:"required"`
 }
 
 // type CreateTransactionDTO struct {
