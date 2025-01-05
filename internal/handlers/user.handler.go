@@ -12,6 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description get all user
+// @Tags Users
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Success 200 {object} models.User
+// @Security ApiKeyAuth
+// @Router /users [get]
 func GetAllUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -48,10 +58,21 @@ func GetAllUser(c *gin.Context) {
 	response.GetAllSuccess("Success Get All Users", user, pageInfo)
 }
 
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description get all user
+// @Tags Users
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Success 200 {object} models.User
+// @Security ApiKeyAuth
+// @Router /users/{id} [get]
 func GetUserById(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
 	userId, exists := c.Get("UserId")
+	fmt.Println(userId)
 	if !exists {
 		response.Unauthorized("Unauthorized", nil)
 		return
@@ -77,6 +98,18 @@ func GetUserById(c *gin.Context) {
 	response.Success("Success get user", user)
 }
 
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description get all user
+// @Tags Users
+// @Accept mpfd
+// @Produce json
+// @Param userInput formData dto.CreateUserDTO false "Create user"
+// @Param image formData file false "Profile user"
+// @Success 200 {object} models.User
+// @Security ApiKeyAuth
+// @Router /users [post]
 func CreateUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 
@@ -404,6 +437,17 @@ func UpdateUser(c *gin.Context) {
 // 	response.Success("User updated successfully", user)
 // }
 
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description get all user
+// @Tags Users
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Param id path int false "delete user id"
+// @Success 200 {object} models.User
+// @Security ApiKeyAuth
+// @Router /users/{id} [delete]
 func DeleteUser(c *gin.Context) {
 	response := pkg.NewResponse(c)
 

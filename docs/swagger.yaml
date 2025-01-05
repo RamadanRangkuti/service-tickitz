@@ -1,0 +1,126 @@
+basePath: /
+definitions:
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      last_name:
+        type: string
+      phone_number:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /users:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: get all user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - ApiKeyAuth: []
+      summary: ping example
+      tags:
+      - Users
+    post:
+      consumes:
+      - multipart/form-data
+      description: get all user
+      parameters:
+      - in: formData
+        name: email
+        type: string
+      - in: formData
+        name: first_name
+        type: string
+      - in: formData
+        name: last_name
+        type: string
+      - in: formData
+        name: password
+        type: string
+      - in: formData
+        name: phone_number
+        type: string
+      - in: formData
+        name: role
+        type: string
+      - description: Profile user
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - ApiKeyAuth: []
+      summary: ping example
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: get all user
+      parameters:
+      - description: delete user id
+        in: path
+        name: id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - ApiKeyAuth: []
+      summary: ping example
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: get all user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - ApiKeyAuth: []
+      summary: ping example
+      tags:
+      - Users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
