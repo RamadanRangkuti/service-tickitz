@@ -275,7 +275,102 @@ paths:
       summary: Get all movies
       tags:
       - Movies
+    post:
+      consumes:
+      - application/json
+      description: Create a new movie with the provided details
+      parameters:
+      - description: Movie details
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.MovieDetails'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.MovieDetails'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new movie
+      tags:
+      - Movies
   /movies/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a movie by its ID
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a movie
+      tags:
+      - Movies
     get:
       consumes:
       - application/json
@@ -328,6 +423,66 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get movie by ID
+      tags:
+      - Movies
+    patch:
+      consumes:
+      - application/json
+      description: Update the details of a movie by its ID
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated movie details
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.MovieDetails'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.MovieDetails'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update an existing movie
       tags:
       - Movies
   /order/cinemas:

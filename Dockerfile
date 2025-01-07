@@ -5,7 +5,8 @@ WORKDIR /app
 COPY . .
 
 RUN go mod tidy
-RUN go build -o service-tickitz main.go
+RUN go build -o backend main.go
 
+expose 8888
 
-ENTRYPOINT ["/app/service-tickitz"]
+ENTRYPOINT ["/app/backend"]

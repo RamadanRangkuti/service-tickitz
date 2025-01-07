@@ -8,9 +8,9 @@ import (
 )
 
 func UserRouter(r *gin.RouterGroup) {
-	r.GET("/", middlewares.ValidateToken(), middlewares.RoleCheck(2), handlers.GetAllUser)
+	r.GET("", middlewares.ValidateToken(), middlewares.RoleCheck(2), handlers.GetAllUser)
 	r.GET("/:id", middlewares.ValidateToken(), handlers.GetUserById)
-	r.POST("/", middlewares.ValidateToken(), middlewares.RoleCheck(2), handlers.CreateUser)
+	r.POST("", middlewares.ValidateToken(), middlewares.RoleCheck(2), handlers.CreateUser)
 	r.PATCH("/:id", middlewares.ValidateToken(), handlers.UpdateUser)
 	r.DELETE("/:id", middlewares.ValidateToken(), handlers.DeleteUser)
 }

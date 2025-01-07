@@ -47,10 +47,10 @@ func GetMovies(c *gin.Context) {
 	countKey := "movies:count"
 
 	var movies []models.MovieDetails
+
 	cachedMovies := pkg.Redis().Get(context.Background(), cacheKey)
+
 	if cachedMovies.Val() != "" {
-		json.Unmarshal([]byte(cachedMovies.Val()), &movies)
-	} else {
 		movies, err := repositories.FindAllMovies(page, limit, order, sortBy, search)
 		if err != nil {
 			response.InternalServerError("Failed to fetch movies", err.Error())
@@ -58,7 +58,23 @@ func GetMovies(c *gin.Context) {
 		}
 		encoded, _ := json.Marshal(movies)
 		pkg.Redis().Set(context.Background(), cacheKey, string(encoded), time.Minute*10)
+	} else {
+		json.Unmarshal([]byte(cachedMovies.Val()), &movies)
 	}
+
+	fmt.Println(movies)
+	// cachedMovies := pkg.Redis().Get(context.Background(), cacheKey)
+	// if cachedMovies.Val() != "" {
+	// 	json.Unmarshal([]byte(cachedMovies.Val()), &movies)
+	// } else {
+	// 	movies, err := repositories.FindAllMovies(page, limit, order, sortBy, search)
+	// 	if err != nil {
+	// 		response.InternalServerError("Failed to fetch movies", err.Error())
+	// 		return
+	// 	}
+	// 	encoded, _ := json.Marshal(movies)
+	// 	pkg.Redis().Set(context.Background(), cacheKey, string(encoded), time.Minute*10)
+	// }
 
 	var count int
 	cachedCount := pkg.Redis().Get(context.Background(), countKey)
@@ -121,4 +137,55 @@ func GetMovieById(c *gin.Context) {
 	}
 
 	response.Success("Success get movie", movie)
+}
+
+// CreateMovie godoc
+// @Summary Create a new movie
+// @Schemes
+// @Description Create a new movie with the provided details
+// @Tags Movies
+// @Accept json
+// @Produce json
+// @Param movie body models.MovieDetails true "Movie details"
+// @Success 201 {object} pkg.Response{data=models.MovieDetails}
+// @Failure 400 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
+// @Security ApiKeyAuth
+// @Router /movies [post]
+func CreateMovie(c *gin.Context) {
+}
+
+// UpdateMovie godoc
+// @Summary Update an existing movie
+// @Schemes
+// @Description Update the details of a movie by its ID
+// @Tags Movies
+// @Accept json
+// @Produce json
+// @Param id path int true "Movie ID"
+// @Param movie body models.MovieDetails true "Updated movie details"
+// @Success 200 {object} pkg.Response{data=models.MovieDetails}
+// @Failure 400 {object} pkg.Response{error=string}
+// @Failure 404 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
+// @Security ApiKeyAuth
+// @Router /movies/{id} [patch]
+func Update(c *gin.Context) {
+}
+
+// DeleteMovie godoc
+// @Summary Delete a movie
+// @Schemes
+// @Description Delete a movie by its ID
+// @Tags Movies
+// @Accept json
+// @Produce json
+// @Param id path int true "Movie ID"
+// @Success 204 {object} pkg.Response
+// @Failure 400 {object} pkg.Response{error=string}
+// @Failure 404 {object} pkg.Response{error=string}
+// @Failure 500 {object} pkg.Response{error=string}
+// @Security ApiKeyAuth
+// @Router /movies/{id} [delete]
+func Delete(c *gin.Context) {
 }

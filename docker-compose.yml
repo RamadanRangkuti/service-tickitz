@@ -1,9 +1,26 @@
 services:
   backend-app:
     build: .
+    ports:
+      - 8081:8888
+    restart: always
+    networks:
+      webservices:
+        ipv4_address: 101.10.11.150
   db:
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=123
+      - POSTGRES_PASSWORD=1
     volumes:
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    restart: always
+    networks:
+      webservices:
+        ipv4_address: 101.10.11.100
+networks:
+  webservices:
+    ipam:
+      driver: default
+      config:
+        - subnet: 101.10.0.0/16
+          ip_range: 101.10.11.0/24

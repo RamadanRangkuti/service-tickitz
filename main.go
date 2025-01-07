@@ -21,6 +21,7 @@ func main() {
 	r := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerfile.Handler))
+	r.Static("/public/images", "public/images")
 	routers.Routers(r)
-	r.Run("localhost:8082")
+	r.Run(":8888")
 }
