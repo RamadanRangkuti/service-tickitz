@@ -1,12 +1,41 @@
 services:
-  backend-app:
+# Backend App 1
+  backend-app-1:
     build: .
     ports:
       - 8081:8888
     restart: always
+    volumes:
+      - tickitz-volume:/app/public/images
     networks:
       webservices:
         ipv4_address: 101.10.11.150
+
+# Backend App 2
+  backend-app-2:
+    build: .
+    ports:
+      - 8082:8888
+    restart: always
+    volumes:
+      - tickitz-volume:/app/public/images
+    networks:
+      webservices:
+        ipv4_address: 101.10.11.151
+
+# Backend App 3
+  backend-app-3:
+    build: .
+    ports:
+      - 8083:8888
+    restart: always
+    volumes:
+      - tickitz-volume:/app/public/images
+    networks:
+      webservices:
+        ipv4_address: 101.10.11.152
+
+# Database
   db:
     image: postgres
     environment:
@@ -17,6 +46,12 @@ services:
     networks:
       webservices:
         ipv4_address: 101.10.11.100
+
+# Volumes
+volumes:
+  tickitz-volume:
+
+#Network
 networks:
   webservices:
     ipam:
@@ -24,3 +59,4 @@ networks:
       config:
         - subnet: 101.10.0.0/16
           ip_range: 101.10.11.0/24
+

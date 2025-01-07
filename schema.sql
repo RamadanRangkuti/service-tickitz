@@ -153,3 +153,8 @@ CREATE TABLE payments (
     created_at timestamp with time zone default current_timestamp,
     updated_at timestamp with time zone
 );
+
+
+INSERT INTO user_roles (role) VALUES
+('user'),
+('admin');
